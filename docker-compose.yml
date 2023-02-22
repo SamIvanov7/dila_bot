@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  bot:
+    build: .
+    restart: always
+    environment:
+      TELEGRAM_TOKEN: "6038351834:AAHrRDBUteglTmvBGPEQjN1mor8_8Bm1Blk"
+    volumes:
+      - ./excel_docs:/app/excel_docs
+
