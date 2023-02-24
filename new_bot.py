@@ -7,6 +7,33 @@ from openpyxl import load_workbook
 bot = telebot.TeleBot("6038351834:AAHrRDBUteglTmvBGPEQjN1mor8_8Bm1Blk")
 file_path = "excel_docs/S.xlsx"
 
+import pandas as pd
+
+reg = pd.read_excel("excel_docs/regions.xlsx")
+reg = reg.iloc[:, :2]
+reg = reg.values
+reg_list = reg.tolist()
+
+
+def find_region(city, data):
+    for row in data:
+        if row[0] == city:
+            return row[1]
+    return None
+
+
+def find_first_word(text):
+    match = re.search(r"\w+", text)
+    if match:
+        return match.group()
+    return None
+
+
+def digits_to_string(digits):
+    string = "".join(digits)
+    return string
+
+
 # Set up logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -83,7 +110,7 @@ def handle_text_message(message):
                 date,
                 name,
                 city,
-                None,
+                region,
                 phone,
                 email,
                 address,
@@ -109,17 +136,17 @@ def handle_text_message(message):
 
         name = re.search(r"Ваше_імя_прізвище_по_батькові_: (.+?)\n", text).group(1)
         name = name if name else None
-        city = re.search(
+        city_search = re.search(
             r"В_якому_місті_Ви_плануєте_відкрити_діагностичне_відділення_МЛ_ДІЛА_: (.*)",
             text,
         )
-        city = city.group(1) if city else None
-        result = str(re.findall(r"Phone:.\w+", text))
-        result = result.split(" ")
-        result = result[1]
-        result = result[:10]
-        phone = result
-        phone1 = digits[8:18]
+        city_search = city_search.group(1) if city_search else None
+        town = find_first_word(city_search)
+        city = town
+        region = find_region(town, reg_list)
+        result = re.search(r"Phone: (.*)", text)
+        result = result.group(1) if result else None
+        phone = digits_to_string(result)
         email = re.search(r"Email: (.*)", text)
         email = email.group(1) if email else None
         address = re.search(
