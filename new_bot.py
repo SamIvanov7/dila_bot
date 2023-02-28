@@ -4,7 +4,7 @@ import re
 import telebot
 from openpyxl import load_workbook
 
-bot = telebot.TeleBot("6048217991:AAEvx_6htHm_kGEW5zT22OV0l9BCmIVOTbw")
+bot = telebot.TeleBot("")
 
 file_path = "excel_docs/S.xlsx"
 
