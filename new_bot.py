@@ -4,16 +4,28 @@ import re
 import telebot
 from openpyxl import load_workbook
 
-bot = telebot.TeleBot("")
+bot = telebot.TeleBot("6048217991:AAEvx_6htHm_kGEW5zT22OV0l9BCmIVOTbw")
 
 file_path = "excel_docs/S.xlsx"
 
 import pandas as pd
 
-reg = pd.read_excel("excel_docs/regions.xlsx")
-reg = reg.iloc[:, :2]
-reg = reg.values
-reg_list = reg.tolist()
+# reg = pd.read_excel("excel_docs/regions.xlsx")
+# reg = reg.iloc[:, :2]
+# reg = reg.values
+# reg_list = reg.tolist()
+with open("excel_docs/reg_list.txt", "r") as f:
+    reg_list_ru = f.readlines()
+list_ru = []
+for line in reg_list_ru:
+    list_ru.append(line.strip())
+list_r = [eval(item) for item in list_ru]
+with open("excel_docs/reg_list_ukr.txt", "r") as f:
+    reg_list_ukr = f.readlines()
+list_ua = []
+for line in reg_list_ukr:
+    list_ua.append(line.strip())
+list_u = [eval(item) for item in list_ua]
 
 
 def find_region(city, data):
@@ -128,6 +140,12 @@ def handle_text_message(message):
         except PermissionError as e:
             print(f"Error saving file {file_path}: {e}")
 
+    def date_search(text):
+        date = "".join(re.findall(r"\d+", text))
+        if not date:
+            date = "28.02.2023"
+        return date
+
     def name_search(text):
         name = re.search(r"Ваше_імя_прізвище_по_батькові_: (.+?)\n", text)
         if not name:
@@ -169,7 +187,7 @@ def handle_text_message(message):
         return adress
 
     try:
-        digits = "".join(re.findall(r"\d+", text))
+        digits = date_search(text)
         day = digits[:2]
         month = digits[2:4]
         year = digits[4:8]
@@ -181,7 +199,9 @@ def handle_text_message(message):
         if city is not None:
             city = city.group(1)
         town = str(find_first_word(city))
-        region = find_region(town, reg_list)
+        region = find_region(town, list_r)
+        if region is None:
+            region = find_region(town, list_u)
 
         phone = phone_search(text)
         if phone is not None:
