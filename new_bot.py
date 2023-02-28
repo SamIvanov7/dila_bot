@@ -4,7 +4,8 @@ import re
 import telebot
 from openpyxl import load_workbook
 
-bot = telebot.TeleBot("6038351834:AAHrRDBUteglTmvBGPEQjN1mor8_8Bm1Blk")
+bot = telebot.TeleBot("")
+
 file_path = "excel_docs/S.xlsx"
 
 import pandas as pd
@@ -109,11 +110,11 @@ def handle_text_message(message):
                 number,
                 date,
                 name,
-                city,
+                town,
                 region,
                 phone,
                 email,
-                address,
+                adress,
                 None,
                 None,
                 None,
@@ -123,9 +124,49 @@ def handle_text_message(message):
             ws.append(new_row)
             # Save the updated data back to the Excel file
             wb.save(file_path)
+            return number
         except PermissionError as e:
             print(f"Error saving file {file_path}: {e}")
-            return
+
+    def name_search(text):
+        name = re.search(r"Ваше_імя_прізвище_по_батькові_: (.+?)\n", text)
+        if not name:
+            name = re.search(r"Ім'я - (.+?)\n", text)
+        return name
+
+    def city_search(text):
+        city = re.search(
+            r"В_якому_місті_Ви_плануєте_відкрити_діагностичне_відділення_МЛ_ДІЛА_: (.*)",
+            text,
+        )
+        if not city:
+            city = re.search(r"Місто -(.*)", text)
+        return city
+
+    def phone_search(text):
+        phone = re.search(r"Phone: (.*)", text)
+        if not phone:
+            phone = re.search(r"Телефон - (.*)", text)
+        else:
+            None
+        return phone
+
+    def email_search(text):
+        email = re.search(r"Email: (.*)", text)
+        if not email:
+            email = re.search(r"E-mail -(.*)", text)
+        else:
+            None
+        return email
+
+    def adress_search(text):
+        adress = re.search(
+            r"Якщо_у_Вас_є_приміщення_в_якому_ви_бажаєте_розмістити_франчайзингове_відділення_вкажіть_повну_адресу: (.*)",
+            text,
+        )
+        if not adress:
+            adress = None
+        return adress
 
     try:
         digits = "".join(re.findall(r"\d+", text))
@@ -133,34 +174,41 @@ def handle_text_message(message):
         month = digits[2:4]
         year = digits[4:8]
         date = f"{day}.{month}.{year}"
-
-        name = re.search(r"Ваше_імя_прізвище_по_батькові_: (.+?)\n", text).group(1)
-        name = name if name else None
-        city_search = re.search(
-            r"В_якому_місті_Ви_плануєте_відкрити_діагностичне_відділення_МЛ_ДІЛА_: (.*)",
-            text,
-        )
-        city_search = city_search.group(1) if city_search else None
-        town = find_first_word(city_search)
-        city = town
+        name = name_search(text)
+        if name is not None:
+            name = name.group(1)
+        city = city_search(text)
+        if city is not None:
+            city = city.group(1)
+        town = str(find_first_word(city))
         region = find_region(town, reg_list)
-        result = re.search(r"Phone: (.*)", text)
-        result = result.group(1) if result else None
-        phone = digits_to_string(result)
-        email = re.search(r"Email: (.*)", text)
-        email = email.group(1) if email else None
-        address = re.search(
-            r"Якщо_у_Вас_є_приміщення_в_якому_ви_бажаєте_розмістити_франчайзингове_відділення_вкажіть_повну_адресу: (.*)",
-            text,
-        )
-        address = address.group(1) if address else None
-        update_excel_file(file_path)
+
+        phone = phone_search(text)
+        if phone is not None:
+            phone = phone.group(1)
+        phone = digits_to_string(phone)
+        email = email_search(text)
+        if email is not None:
+            email = email.group(1)
+
+        adress = adress_search(text)
+        if adress is not None:
+            adress = adress.group(1)
+
+        # number = print(f"{update_excel_file(file_path)}")
         bot.send_message(
-            chat_id=message.chat.id, text="Successfully updated the Excel file."
+            chat_id=message.chat.id,
+            text=f"В файл добавлена новая строка 8====o \nНомер: {update_excel_file(file_path)}\nДата: {date}\nФИО: {name}\nГород: {town}\nОбласть: {region}\nТелефон: {phone}\nПочта: {email}\nАдрес: {adress}",
         )
     except Exception as e:
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=f"сасай, ошибка! Проверь форму ебаный в рот!   Error: {e}",
+        )
         # Call the error handler function
-        print(e, result)
+        print(
+            e,
+        )
 
 
 if __name__ == "__main__":
